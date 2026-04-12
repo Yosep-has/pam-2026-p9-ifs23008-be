@@ -29,7 +29,7 @@ python -m ensurepip --upgrade
 pip install -r requirements.txt
 ```
 
-# 4. Run
+# 5. Run App
 ```bash
 python app.py
 ```
