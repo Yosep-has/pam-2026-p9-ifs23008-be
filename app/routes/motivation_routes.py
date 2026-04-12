@@ -19,7 +19,10 @@ def generate():
         return jsonify({"error": "Total is required"}), 400
     
     if total <= 0:
-        return jsonify({"error": "Total harus besar dari nol"}), 400
+        return jsonify({"error": "Total harus besar dari 0"}), 400
+    
+    if total > 10:
+        return jsonify({"error": "Total maksimal harus 10"}), 400
 
     try:
         result = create_motivations(theme, total)
