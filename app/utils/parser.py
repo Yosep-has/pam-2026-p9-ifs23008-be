@@ -1,15 +1,17 @@
 import json
 import re
 
-def parse_llm_response(result):
+def parse_llm_response(content):
     try:
-        content = result.get("response") or result
+        # Pastikan content adalah string
+        if isinstance(content, dict):
+            content = content.get("response", "")
 
-        # 🔥 hapus ```json ... ```
-        content = re.sub(r"```json\n|\n```", "", content)
+        # Hapus markdown code block jika ada
+        content = re.sub(r"```json\s*|\s*```", "", content)
+        content = content.strip()
 
         parsed = json.loads(content)
-
         return parsed.get("motivations", [])
 
     except Exception as e:

@@ -1,63 +1,65 @@
-from app.extensions import SessionLocal
+from app.extensions import db
 from app.models.motivation import Motivation
 from app.models.request_log import RequestLog
 from app.services.llm_service import generate_from_llm
 from app.utils.parser import parse_llm_response
 
 def create_motivations(theme: str, total: int):
-    session = SessionLocal()
-
+    """Fungsi untuk membuat tips peternakan baru menggunakan AI dan menyimpannya ke DB."""
     try:
         prompt = f"""
-        Dalam format JSON, buat {total} kata-kata motivasi dengan tema "{theme}".
-        Format:
+        Kamu adalah seorang ahli peternakan berpengalaman dari Delcom Farm.
+        Dalam format JSON, berikan {total} tips, saran, atau informasi seputar peternakan dengan topik "{theme}".
+
+        Setiap tips harus informatif, praktis, dan berguna bagi peternak.
+        Gunakan bahasa Indonesia yang mudah dipahami.
+
+        WAJIB gunakan struktur JSON murni seperti di bawah ini:
         {{
             "motivations": [
-                {{"text": "..."}}
+                {{"text": "tips peternakan 1 yang informatif dan praktis"}},
+                {{"text": "tips peternakan 2 yang informatif dan praktis"}}
             ]
         }}
         """
 
+        # Ambil hasil dari Gemini
         result = generate_from_llm(prompt)
-        motivations = parse_llm_response(result)
 
-        # save request log
+        # Pastikan ambil string dari dictionary
+        if isinstance(result, dict):
+            raw_response = result.get("response", "")
+        else:
+            raw_response = result
+
+        # Ubah teks string menjadi list Python menggunakan parser
+        motivations = parse_llm_response(raw_response)
+
+        # Simpan log permintaan ke database
         req_log = RequestLog(theme=theme)
-        session.add(req_log)
-        session.commit()
+        db.session.add(req_log)
+        db.session.flush()
 
-        saved = []
-
+        saved_texts = []
         for item in motivations:
             text = item.get("text")
+            new_m = Motivation(text=text, request_id=req_log.id)
+            db.session.add(new_m)
+            saved_texts.append(text)
 
-            m = Motivation(
-                text=text,
-                request_id=req_log.id
-            )
-            session.add(m)
-            saved.append(text)
-
-        session.commit()
-
-        return saved
+        db.session.commit()
+        return saved_texts
 
     except Exception as e:
-        session.rollback()
+        db.session.rollback()
+        print(f"Error di create_motivations: {e}")
         raise e
 
-    finally:
-        session.close()
-
-
-def get_all_motivations(page: int = 1, per_page: int = 100):
-    session = SessionLocal()
-
+def get_all_motivations(page: int = 1, per_page: int = 10):
+    """Fungsi untuk mengambil daftar tips peternakan yang sudah ada di DB."""
     try:
-        query = session.query(Motivation)
-
+        query = Motivation.query
         total = query.count()
-
         data = (
             query
             .order_by(Motivation.id.desc())
@@ -70,18 +72,16 @@ def get_all_motivations(page: int = 1, per_page: int = 100):
             {
                 "id": m.id,
                 "text": m.text,
-                "created_at": m.created_at.isoformat()
-            }
-            for m in data
+                "created_at": m.created_at.isoformat() if m.created_at else None
+            } for m in data
         ]
 
         return {
+            "total": total,
             "page": page,
             "per_page": per_page,
-            "total": total,
-            "total_pages": (total + per_page - 1) // per_page,
             "data": result
         }
-
-    finally:
-        session.close()
+    except Exception as e:
+        print(f"Error di get_all_motivations: {e}")
+        raise e

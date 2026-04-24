@@ -1,20 +1,26 @@
-import requests
-from app.config import Config
+import os
+from google import genai
 
 def generate_from_llm(prompt: str):
-    response = requests.post(
-        f"{Config.BASE_URL}/llm/chat",
-        json={
-            "token": Config.LLM_TOKEN,
-            "chat": prompt
-        }
-    )
-    
-    # Debug Output dari API LLM
-    # print("STATUS:", response.status_code)
-    # print("RESPONSE:", response.text)
+    try:
+        client = genai.Client()  # otomatis baca GEMINI_API_KEY dari .env
 
-    if response.status_code != 200:
-        raise Exception("LLM request failed")
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
 
-    return response.json()
+        raw_text = response.text
+
+        if raw_text.startswith("```json"):
+            raw_text = raw_text.replace("```json", "", 1)
+            raw_text = raw_text.replace("```", "")
+        elif raw_text.startswith("```"):
+            raw_text = raw_text.replace("```", "")
+
+        raw_text = raw_text.strip()
+
+        return {"response": raw_text}
+
+    except Exception as e:
+        raise Exception(f"PESAN ASLI GEMINI: {str(e)}")

@@ -1,11 +1,10 @@
-from sqlalchemy import Column, Integer, Text, DateTime, ForeignKey
+from app.extensions import db
 from datetime import datetime, timezone
-from app.extensions import Base
 
-class Motivation(Base):
+class Motivation(db.Model):
     __tablename__ = "motivations"
 
-    id = Column(Integer, primary_key=True)
-    text = Column(Text)
-    request_id = Column(Integer, ForeignKey("requests.id"))
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text)
+    request_id = db.Column(db.Integer, db.ForeignKey("requests.id"))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
