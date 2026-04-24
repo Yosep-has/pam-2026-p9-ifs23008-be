@@ -8,7 +8,7 @@ motivation_bp = Blueprint("motivation", __name__)
 
 @motivation_bp.route("/", methods=["GET"])
 def index():
-    return "API telah berjalan! Dibuat oleh Abdullah Ubaid"
+    return "API telah berjalan! Dibuat oleh Yosep Mangadu Simatupang"
     
 
 @motivation_bp.route("/motivations/generate", methods=["POST"])
