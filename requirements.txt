@@ -5,3 +5,5 @@ python-dotenv
 requests
 google-genai
 gunicorn
+PyJWT
+werkzeug
